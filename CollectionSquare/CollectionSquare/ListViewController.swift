@@ -103,25 +103,3 @@ extension ListViewController: ListViewControllerInput {
     }
 }
 
-
-
-//MARK: SwiftUI for presentation
-
-import SwiftUI
-
-struct ListProvider: PreviewProvider {
-    static var previews: some View {
-        CointainerView().edgesIgnoringSafeArea(.all)
-    }
-
-    struct CointainerView: UIViewControllerRepresentable {
-        let listVC = ListViewController()
-
-        func makeUIViewController(context: UIViewControllerRepresentableContext<ListProvider.CointainerView>) -> ListViewController {
-            return listVC
-        }
-
-        func updateUIViewController(_ uiViewController: ListProvider.CointainerView.UIViewControllerType, context: UIViewControllerRepresentableContext<ListProvider.CointainerView>) {
-        }
-    }
-}

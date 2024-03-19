@@ -18,11 +18,7 @@ final class ListViewPresenter {
 
     weak var view: ListViewControllerInput?
     
-    var dataSource = [MSection]() {
-        didSet {
-            view?.reloadData()
-        }
-    }
+    var dataSource = [MSection]()
 
     private var visibleCellsSet =  Set<IndexPath>()
     private var timer: Timer?
@@ -59,6 +55,7 @@ private extension ListViewPresenter {
             }
             dataSource.append(MSection(items: items))
         }
+        view?.reloadData()
     }
 
     // MARK: - Timer
@@ -84,13 +81,17 @@ private extension ListViewPresenter {
         }
 
         for index in visibleCellsSet {
-            if index.item < arrayItemVis[index.section]!.0 { arrayItemVis[index.section]?.0 = index.item }
-            if index.item > arrayItemVis[index.section]!.1 { arrayItemVis[index.section]?.1 = index.item }
+            guard let min = arrayItemVis[index.section]?.0 else { return }
+            if index.item < min { arrayItemVis[index.section]?.0 = index.item }
+            guard let max = arrayItemVis[index.section]?.1 else { return }
+            if index.item > max { arrayItemVis[index.section]?.1 = index.item }
         }
 
         for sec in (minSection...maxSection) {
-            let el = Int.random(in: arrayItemVis[sec]!.0...arrayItemVis[sec]!.1)
+            guard let min = arrayItemVis[sec]?.0, let max = arrayItemVis[sec]?.1 else { return }
+            let el = Int.random(in: min...max)
             dataSource[sec].items[el].name = String(Int.random(in: 0...maxRandomNumber))
         }
+        view?.reloadData()
     }
 }
