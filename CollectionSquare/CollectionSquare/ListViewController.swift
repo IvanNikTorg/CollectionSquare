@@ -10,6 +10,7 @@ import UIKit
 class ListViewController: UIViewController {
 
     var visibleSet =  Set<IndexPath>()
+    var changeSections = [MSection]()
     typealias Snapshot = NSDiffableDataSourceSnapshot<MSection, MItem>
 
     var sections = [MSection]()
@@ -28,7 +29,7 @@ class ListViewController: UIViewController {
                 myItem.append(MItem(id: String(tmpName), name: String(Int.random(in: 0...100))))
                 tmpName += 1
             }
-            sections.append(MSection(id: String(el), number: el, items: myItem))
+            sections.append(MSection(id: String(el), items: myItem))
         }
     }
 
@@ -50,7 +51,6 @@ class ListViewController: UIViewController {
         collectionView.register(RedCell.self, forCellWithReuseIdentifier: RedCell.reuseId)
 
             collectionView.delegate = self
-//            collectionView.dataSource = self
 
     }
 
@@ -80,12 +80,21 @@ class ListViewController: UIViewController {
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 
-    func replaceItems(item: MItem, section: MSection) {
+    func replaceItems(sec: [MSection]) {
         guard var snapshot = dataSource?.snapshot() else { return }
-        print(item)
-        snapshot.deleteItems([item])
-        snapshot.appendItems([item])
-       // snapshot.reloadItems([item])
+
+        let itemIdent = sec.map {
+            snapshot.itemIdentifiers(inSection: $0)
+        }
+
+        itemIdent.forEach {
+            snapshot.deleteItems($0)
+        }
+        sec.forEach {
+            snapshot.appendItems($0.items, toSection: $0)
+            snapshot.reloadItems($0.items)
+        }
+
         dataSource?.apply(snapshot, animatingDifferences: false)
     }
 
@@ -122,35 +131,14 @@ class ListViewController: UIViewController {
             if index.item > arrayItemVis[index.section]!.1 { arrayItemVis[index.section]?.1 = index.item }
         }
 
-//        print(arrayItemVis)
-
         for sec in (minSection...maxSection) {
             let el = Int.random(in: arrayItemVis[sec]!.0...arrayItemVis[sec]!.1)
-//            sections[sec].items[el].name = String(Int.random(in: 0...100))
-//            sections[sec].items[el].id = UUID().uuidString
-            let newItem = MItem(id: sections[sec].items[el].id, name: "-")//String(Int.random(in: 0...100)))
-            sections[sec].items[el] = newItem
-            replaceItems(item: newItem, section: sections[sec])
+            sections[sec].items[el].name = String(Int.random(in: 0...100))
+            changeSections.append(sections[sec])
         }
+        replaceItems(sec: changeSections)
     }
 }
-
-//extension ListViewController: UICollectionViewDataSource {
-//    func numberOfSections(in collectionView: UICollectionView) -> Int {
-//        return sections.count
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//        return sections[section].items.count
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-//        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId, for: indexPath) as! RedCell
-//        cell.configure(with: sections[indexPath.section].items[indexPath.row])
-//        return cell
-//    }
-//}
-
 
 extension ListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
@@ -175,9 +163,7 @@ private extension ListViewController {
 
     @objc func updateTimer() {
         updateNewRandomNumbers()
-       // collectionView.reloadData()
-       // reloadData()
-
+        changeSections = [MSection]()
     }
 }
 
