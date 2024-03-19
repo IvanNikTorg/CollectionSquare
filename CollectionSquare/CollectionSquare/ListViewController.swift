@@ -7,39 +7,23 @@
 
 import UIKit
 
+protocol ListViewControllerInput: AnyObject {
+    func reloadData()
+}
+
 class ListViewController: UIViewController {
 
-    var visibleSet =  Set<IndexPath>()
-    typealias Snapshot = NSDiffableDataSourceSnapshot<MSection, MItem>
-
-    var sections = [MSection]()
-
-    var timer: Timer?
     var collectionView: UICollectionView!
-    var dataSource: UICollectionViewDiffableDataSource <MSection, MItem>?
-
-    //MARK: create random Items
-
-    var tmpName = 0
-    func randElem() {
-        for el in (0...20) {
-            var myItem = [MItem]()
-            for _ in (0...10) {
-                myItem.append(MItem(id: String(tmpName), name: String(Int.random(in: 0...100))))
-                tmpName += 1
-            }
-            sections.append(MSection(id: String(el), number: el, items: myItem))
-        }
-    }
+    var presenter: ListViewControllerOutput?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        randElem()
+
         setupCollectionView()
-        createTimer()
-        createDataSource()
-        reloadData()
+        presenter?.viewIsReady()
     }
+
+    // MARK: - Private
 
     private func setupCollectionView() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: createCompositionalLayout())
@@ -49,8 +33,8 @@ class ListViewController: UIViewController {
 
         collectionView.register(RedCell.self, forCellWithReuseIdentifier: RedCell.reuseId)
 
-            collectionView.delegate = self
-//            collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.dataSource = self
 
     }
 
@@ -61,41 +45,13 @@ class ListViewController: UIViewController {
         return layout
     }
 
-    private func createDataSource() {
-        dataSource = UICollectionViewDiffableDataSource <MSection, MItem>(collectionView: collectionView) { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId, for: indexPath) as? RedCell
-            cell?.configure(with: item)
-            return cell
-        }
-    }
-
-    func reloadData() {
-        var snapshot = Snapshot()
-        snapshot.appendSections(sections)
-
-        sections.forEach {
-            snapshot.appendItems($0.items, toSection: $0)
-        }
-
-        dataSource?.apply(snapshot, animatingDifferences: false)
-    }
-
-    func replaceItems(item: MItem, section: MSection) {
-        guard var snapshot = dataSource?.snapshot() else { return }
-        print(item)
-        snapshot.deleteItems([item])
-        snapshot.appendItems([item])
-       // snapshot.reloadItems([item])
-        dataSource?.apply(snapshot, animatingDifferences: false)
-    }
-
-    func createSections() -> NSCollectionLayoutSection {
+    private func createSections() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(widthDimension: .absolute(86), heightDimension: .absolute(86))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
         item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 8, bottom: 8, trailing: 0)
 
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(3), heightDimension: .estimated(1))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .estimated(300), heightDimension: .estimated(1))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
         let section = NSCollectionLayoutSection(group: group)
@@ -104,82 +60,50 @@ class ListViewController: UIViewController {
         section.orthogonalScrollingBehavior = .continuous
         return section
     }
+}
 
-    func updateNewRandomNumbers() {
-        guard var minSection = visibleSet.first?.section else { return }
-        guard var maxSection = visibleSet.first?.section else { return }
+// MARK: - UICollectionViewDataSource
 
-        var arrayItemVis = [Int: (Int, Int)]()
+extension ListViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return presenter?.dataSource.count ?? 0
+    }
 
-        for index in visibleSet {
-            arrayItemVis[index.section] = (100,0)
-            if index.section > maxSection { maxSection = index.section }
-            if index.section < minSection { minSection = index.section }
-        }
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return presenter?.dataSource[section].items.count ?? 0
+    }
 
-        for index in visibleSet {
-            if index.item < arrayItemVis[index.section]!.0 { arrayItemVis[index.section]?.0 = index.item }
-            if index.item > arrayItemVis[index.section]!.1 { arrayItemVis[index.section]?.1 = index.item }
-        }
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId,
+                                                            for: indexPath) as? RedCell,
+              let output = presenter else { return UICollectionViewCell() }
 
-//        print(arrayItemVis)
-
-        for sec in (minSection...maxSection) {
-            let el = Int.random(in: arrayItemVis[sec]!.0...arrayItemVis[sec]!.1)
-//            sections[sec].items[el].name = String(Int.random(in: 0...100))
-//            sections[sec].items[el].id = UUID().uuidString
-            let newItem = MItem(id: sections[sec].items[el].id, name: "-")//String(Int.random(in: 0...100)))
-            sections[sec].items[el] = newItem
-            replaceItems(item: newItem, section: sections[sec])
-        }
+        cell.configure(with: output.dataSource[indexPath.section].items[indexPath.row])
+        return cell
     }
 }
 
-//extension ListViewController: UICollectionViewDataSource {
-//    func numberOfSections(in collectionView: UICollectionView) -> Int {
-//        return sections.count
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//        return sections[section].items.count
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-//        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId, for: indexPath) as! RedCell
-//        cell.configure(with: sections[indexPath.section].items[indexPath.row])
-//        return cell
-//    }
-//}
-
+// MARK: - UICollectionViewDelegate
 
 extension ListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        visibleSet.insert(indexPath)
+        presenter?.insertToVisibleSet(indexPath: indexPath)
     }
 
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        visibleSet.remove(indexPath)
+        presenter?.removeFromVisibleSet(indexPath: indexPath)
     }
 }
 
-// MARK: - Timer
+// MARK: - ListViewControllerInput
 
-private extension ListViewController {
-    func createTimer() {
-        timer = Timer.scheduledTimer(timeInterval: 1.0,
-                                     target: self,
-                                     selector: #selector(updateTimer),
-                                     userInfo: nil,
-                                     repeats: true)
-    }
-
-    @objc func updateTimer() {
-        updateNewRandomNumbers()
-       // collectionView.reloadData()
-       // reloadData()
-
+extension ListViewController: ListViewControllerInput {
+    func reloadData() {
+        collectionView.reloadData()
     }
 }
+
+
 
 //MARK: SwiftUI for presentation
 
@@ -201,4 +125,3 @@ struct ListProvider: PreviewProvider {
         }
     }
 }
-

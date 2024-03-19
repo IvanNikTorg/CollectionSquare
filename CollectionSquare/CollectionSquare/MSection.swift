@@ -7,9 +7,6 @@
 
 import Foundation
 
-struct MSection: Identifiable, Hashable {
-    let id: String
-    let number: Int
+struct MSection {
     var items: [MItem]
 }
-
