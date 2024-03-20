@@ -11,4 +11,3 @@ struct MSection: Identifiable, Hashable {
     let id: String
     var items: [MItem]
 }
-

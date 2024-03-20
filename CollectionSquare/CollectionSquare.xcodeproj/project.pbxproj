@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CE20057A2BA81CAE007C8951 /* RedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE2005792BA81CAE007C8951 /* RedCell.swift */; };
+		CEEEC4CB2BAA44CD00FBA836 /* ListViewPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEEC4CA2BAA44CD00FBA836 /* ListViewPresenter.swift */; };
 		CEFF30B72BA371B900C7BB95 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFF30B62BA371B900C7BB95 /* AppDelegate.swift */; };
 		CEFF30B92BA371B900C7BB95 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFF30B82BA371B900C7BB95 /* SceneDelegate.swift */; };
 		CEFF30BB2BA371B900C7BB95 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFF30BA2BA371B900C7BB95 /* ListViewController.swift */; };
@@ -18,6 +19,7 @@
 
 /* Begin PBXFileReference section */
 		CE2005792BA81CAE007C8951 /* RedCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedCell.swift; sourceTree = "<group>"; };
+		CEEEC4CA2BAA44CD00FBA836 /* ListViewPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewPresenter.swift; sourceTree = "<group>"; };
 		CEFF30B32BA371B900C7BB95 /* CollectionSquare.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CollectionSquare.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEFF30B62BA371B900C7BB95 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CEFF30B82BA371B900C7BB95 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -61,6 +63,7 @@
 				CEFF30B62BA371B900C7BB95 /* AppDelegate.swift */,
 				CEFF30B82BA371B900C7BB95 /* SceneDelegate.swift */,
 				CEFF30BA2BA371B900C7BB95 /* ListViewController.swift */,
+				CEEEC4CA2BAA44CD00FBA836 /* ListViewPresenter.swift */,
 				CEFF30BF2BA371BB00C7BB95 /* Assets.xcassets */,
 				CEFF30C42BA371BB00C7BB95 /* Info.plist */,
 				CEFF30CA2BA37F9300C7BB95 /* MSection.swift */,
@@ -145,6 +148,7 @@
 				CE20057A2BA81CAE007C8951 /* RedCell.swift in Sources */,
 				CEFF30B92BA371B900C7BB95 /* SceneDelegate.swift in Sources */,
 				CEFF30CB2BA37F9300C7BB95 /* MSection.swift in Sources */,
+				CEEEC4CB2BAA44CD00FBA836 /* ListViewPresenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
