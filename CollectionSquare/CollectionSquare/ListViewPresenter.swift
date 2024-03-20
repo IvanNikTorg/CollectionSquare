@@ -2,13 +2,12 @@
 //  ListViewPresenter.swift
 //  CollectionSquare
 //
-//  Created by user on 19.03.2024.
+//  Created by user on 20.03.2024.
 //
 
-import Foundation
+import UIKit
 
 protocol ListViewControllerOutput: AnyObject {
-    var dataSource: [MSection] { get }
     func viewIsReady()
     func insertToVisibleSet(indexPath: IndexPath)
     func removeFromVisibleSet(indexPath: IndexPath)
@@ -17,12 +16,11 @@ protocol ListViewControllerOutput: AnyObject {
 final class ListViewPresenter {
 
     weak var view: ListViewControllerInput?
-    
-    var dataSource = [MSection]()
 
+    private var sections = [MSection]()
     private var visibleCellsSet =  Set<IndexPath>()
     private var timer: Timer?
-    
+
     private let maxRandomNumber = 100
     private let sectionsCount = 100
     private let itemsInRowCount = 20
@@ -48,14 +46,14 @@ private extension ListViewPresenter {
     // MARK: create random Items
 
     func initialSetup() {
-        for _ in (0...sectionsCount) {
+        for el in (0...sectionsCount) {
             var items = [MItem]()
             for _ in (0...itemsInRowCount) {
                 items.append(MItem(id: UUID().uuidString, name: String(Int.random(in: 0...maxRandomNumber))))
             }
-            dataSource.append(MSection(items: items))
+            sections.append(MSection(id: String(el), items: items))
         }
-        view?.reloadData()
+        view?.reloadData(sections: sections)
     }
 
     // MARK: - Timer
@@ -72,6 +70,7 @@ private extension ListViewPresenter {
         guard var minSection = visibleCellsSet.first?.section,
               var maxSection = visibleCellsSet.first?.section else { return }
 
+        var changeSections = [MSection]()
         var arrayItemVis = [Int: (Int, Int)]()
 
         for index in visibleCellsSet {
@@ -90,8 +89,9 @@ private extension ListViewPresenter {
         for sec in (minSection...maxSection) {
             guard let min = arrayItemVis[sec]?.0, let max = arrayItemVis[sec]?.1 else { return }
             let el = Int.random(in: min...max)
-            dataSource[sec].items[el].name = String(Int.random(in: 0...maxRandomNumber))
+            sections[sec].items[el].name = String(Int.random(in: 0...maxRandomNumber))
+            changeSections.append(sections[sec])
         }
-        view?.reloadData()
+        view?.replaceItems(in: changeSections)
     }
 }

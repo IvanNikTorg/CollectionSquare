@@ -8,44 +8,59 @@
 import UIKit
 
 protocol ListViewControllerInput: AnyObject {
-    func reloadData()
+    func reloadData(sections: [MSection])
+    func replaceItems(in sections: [MSection])
 }
 
 class ListViewController: UIViewController {
 
-    var collectionView: UICollectionView!
-    var presenter: ListViewControllerOutput?
+    typealias Snapshot = NSDiffableDataSourceSnapshot<MSection, MItem>
+
+    weak var presenter: ListViewControllerOutput?
+
+    var collectionView: UICollectionView?
+    var dataSource: UICollectionViewDiffableDataSource <MSection, MItem>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         setupCollectionView()
+        createDataSource()
         presenter?.viewIsReady()
     }
+}
 
-    // MARK: - Private
+// MARK: Collection and DataSource initial setup
 
-    private func setupCollectionView() {
+private extension ListViewController {
+    func setupCollectionView() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: createCompositionalLayout())
+
+        guard let collectionView = collectionView else { return }
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .white
-        view.addSubview(collectionView)
-
         collectionView.register(RedCell.self, forCellWithReuseIdentifier: RedCell.reuseId)
-
         collectionView.delegate = self
-        collectionView.dataSource = self
-
+        view.addSubview(collectionView)
     }
 
-    private func createCompositionalLayout() -> UICollectionViewLayout {
+    func createDataSource() {
+        guard let collectionView = collectionView else { return }
+        dataSource = UICollectionViewDiffableDataSource <MSection, MItem>(collectionView: collectionView) { (collectionView, indexPath, item) -> UICollectionViewCell? in
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId, for: indexPath) as? RedCell
+            cell?.configure(with: item)
+            return cell
+        }
+    }
+
+    func createCompositionalLayout() -> UICollectionViewLayout {
         let layout = UICollectionViewCompositionalLayout { [weak self] (sectionIndex, layoutEnviroment) -> NSCollectionLayoutSection? in
             return self?.createSections()
         }
         return layout
     }
 
-    private func createSections() -> NSCollectionLayoutSection {
+    func createSections() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(widthDimension: .absolute(86), heightDimension: .absolute(86))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
@@ -62,28 +77,7 @@ class ListViewController: UIViewController {
     }
 }
 
-// MARK: - UICollectionViewDataSource
-
-extension ListViewController: UICollectionViewDataSource {
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return presenter?.dataSource.count ?? 0
-    }
-
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return presenter?.dataSource[section].items.count ?? 0
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RedCell.reuseId,
-                                                            for: indexPath) as? RedCell,
-              let output = presenter else { return UICollectionViewCell() }
-
-        cell.configure(with: output.dataSource[indexPath.section].items[indexPath.row])
-        return cell
-    }
-}
-
-// MARK: - UICollectionViewDelegate
+// MARK: UICollectionViewDelegate
 
 extension ListViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
@@ -95,11 +89,53 @@ extension ListViewController: UICollectionViewDelegate {
     }
 }
 
-// MARK: - ListViewControllerInput
+// MARK: ListViewControllerInput
 
 extension ListViewController: ListViewControllerInput {
-    func reloadData() {
-        collectionView.reloadData()
+    func reloadData(sections: [MSection]) {
+        var snapshot = Snapshot()
+        snapshot.appendSections(sections)
+        sections.forEach {
+            snapshot.appendItems($0.items, toSection: $0)
+        }
+        dataSource?.apply(snapshot, animatingDifferences: false)
+    }
+
+    func replaceItems(in sections: [MSection]) {
+        guard var snapshot = dataSource?.snapshot() else { return }
+
+        let itemIdent = sections.map {
+            snapshot.itemIdentifiers(inSection: $0)
+        }
+        itemIdent.forEach {
+            snapshot.deleteItems($0)
+        }
+        sections.forEach {
+            snapshot.appendItems($0.items, toSection: $0)
+            snapshot.reloadItems($0.items)
+        }
+        dataSource?.apply(snapshot, animatingDifferences: false)
     }
 }
 
+
+// MARK: SwiftUI for presentation
+
+import SwiftUI
+
+struct ListProvider: PreviewProvider {
+    static var previews: some View {
+        CointainerView().edgesIgnoringSafeArea(.all)
+    }
+
+    struct CointainerView: UIViewControllerRepresentable {
+        let listVC = ListViewController()
+
+        func makeUIViewController(context: UIViewControllerRepresentableContext<ListProvider.CointainerView>) -> ListViewController {
+            return listVC
+        }
+
+        func updateUIViewController(_ uiViewController: ListProvider.CointainerView.UIViewControllerType, context: UIViewControllerRepresentableContext<ListProvider.CointainerView>) {
+        }
+    }
+}

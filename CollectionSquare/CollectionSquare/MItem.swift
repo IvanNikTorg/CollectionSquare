@@ -7,7 +7,15 @@
 
 import Foundation
 
-struct MItem: Identifiable {
+struct MItem: Identifiable, Hashable {
     var id: String
     var name: String
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: MItem, rhs: MItem) -> Bool {
+        lhs.id == rhs.id
+    }
 }
